@@ -1,0 +1,63 @@
+{
+  "users": [
+    {
+      "id": "1750207141133",
+      "login": "Коля",
+      "passwordHash": "$2b$10$fqe5XmOAYIAPhFnMfN3MBe7dqi.ifpzzXXRFokg3prssoAgmD3TiO",
+      "role": "3",
+      "positionTitle": "Техник-программист",
+      "secretWord": "коля",
+      "likedProjects": [],
+      "resume": {},
+      "about": "",
+      "avatar": "/img/uploads/bf09cd6afd95a8205f1d4670be8a16ac"
+    },
+    {
+      "id": "1750360795833",
+      "login": "123456",
+      "passwordHash": "$2b$10$ZEvvFHzCo1ItQR0SF41SregKIlRdk6aw5s/HpH7V4wVfHguwLKpn6",
+      "role": "2",
+      "positionTitle": "dsdsds",
+      "secretWord": "dsdsddssd",
+      "likedProjects": [],
+      "resume": {},
+      "about": ""
+    }
+  ],
+  "projects": [],
+  "boards": [
+    {
+      "id": "1750207158746",
+      "title": "Диплом",
+      "cards": [
+        {
+          "text": "👏👏👏👏👏👏"
+        }
+      ]
+    },
+    {
+      "id": "1750219098831",
+      "title": "Диплом",
+      "cards": [
+        {
+          "text": "Задача5"
+        },
+        {
+          "text": "Задача2"
+        }
+      ]
+    },
+    {
+      "id": "1750361245571",
+      "title": "покормить кота",
+      "cards": []
+    },
+    {
+      "id": "1750990889040",
+      "title": "Диплом",
+      "cards": []
+    }
+  ],
+  "tasksCalendar": [],
+  "messages": {}
+}

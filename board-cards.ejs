@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>📋 Доска задач</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <div class="container">
+    <div class="top-bar">
+      <a href="/calendar" class="calendar-btn">📅 Календарь</a>
+    </div>
+
+    <div class="board-columns">
+      <% boards.forEach(board => { %>
+      <div class="board-column" id="board-<%= board.id %>">
+        <div class="board-title" id="title-<%= board.id %>">
+          <h3 onclick="openModal('<%= board.title %>', '<%= board.description || 'Нет описания' %>')">📋 <%= board.title %></h3>
+          <button onclick="toggleEdit('<%= board.id %>', true)">✏️</button>
+        </div>
+
+        <form action="/edit-board/<%= board.id %>" method="POST" class="edit-board-form hidden" id="form-<%= board.id %>">
+          <input type="text" name="title" value="<%= board.title %>" placeholder="Название колонки" />
+          <% if (board.cards && board.cards.length > 0) { %>
+            <% board.cards.forEach(card => { %>
+              <input type="text" name="cards" value="<%= card.text %>" />
+            <% }) %>
+          <% } else { %>
+            <p>Нет карточек</p>
+          <% } %>
+          <input type="text" name="cards" placeholder="Новая карточка" />
+          <div class="button-group">
+            <button type="submit">💾</button>
+            <button type="button" class="add" onclick="addCardInput('<%= board.id %>')">➕</button>
+            <button type="button" class="cancel" onclick="toggleEdit('<%= board.id %>', false)">✖</button>
+          </div>
+        </form>
+
+        <ul class="card-list" id="cards-<%= board.id %>">
+          <% if (board.cards && board.cards.length > 0) { %>
+            <% board.cards.forEach(card => { %>
+              <li class="card-item"><%= card.text %></li>
+            <% }) %>
+          <% } else { %>
+            <li class="card-item">Нет карточек</li>
+          <% } %>
+        </ul>
+      </div>
+      <% }) %>
+
+      <form action="/create-board" method="POST" class="board-column">
+        <h3>➕ Новый список</h3>
+        <input type="text" name="title" placeholder="Название списка" required />
+        <div class="top-bar">
+          <button type="submit">Добавить</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Модальное окно -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">×</span>
+      <h3 id="modal-title">Название</h3>
+      <p id="modal-description">Описание</p>
+    </div>
+  </div>
+
+  <script src="/js/board.js"></script>
+</body>
+</html>

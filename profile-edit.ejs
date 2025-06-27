@@ -1,0 +1,14 @@
+<div class="page-container">
+  <h2>Редактировать профиль</h2>
+  <form action="/profile/edit" method="POST" enctype="multipart/form-data">
+    <label>Фото:</label>
+    <input type="file" name="avatar" accept="image/*" />
+
+    <label>О себе:</label>
+    <textarea name="about" rows="4" placeholder="О себе..."><%= user.about || '' %></textarea>
+
+    <button type="submit">Сохранить</button>
+  </form>
+
+  <a href="/profile">← Назад</a>
+</div>

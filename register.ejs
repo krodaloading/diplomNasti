@@ -1,0 +1,28 @@
+<form class="auth-form" action="/register" method="POST">
+<h2>Регистрация</h2>
+
+  <% if (error) { %>
+    <p style="color:red;"><%= error %></p>
+  <% } %>
+
+  <input type="text" name="login" placeholder="Логин" required />
+  <input type="password" name="password" placeholder="Пароль (мин. 8 символов)" required />
+
+  <label for="role">Ваша роль в системе:</label>
+  <select name="role" required>
+    <option disabled selected>Выберите роль</option>
+    <option value="1">Руководитель продукта</option>
+    <option value="2">Руководитель подразделения</option>
+    <option value="3">Исполнитель</option>
+  </select>
+
+  <input type="text" name="positionTitle" placeholder="Уточните вашу должность" required />
+
+  <input type="text" name="secretWord" placeholder="Кодовое слово для восстановления" required />
+
+  <button type="submit">Зарегистрироваться</button>
+
+  <div style="margin-top: 10px;">
+    <a href="/login">← Назад ко входу</a>
+  </div>
+</form>

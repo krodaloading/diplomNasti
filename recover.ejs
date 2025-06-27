@@ -1,0 +1,11 @@
+<form class="auth-form" action="/recover" method="POST">
+  <h2>Восстановление пароля</h2>
+  <% if (error) { %><p style="color:red;"><%= error %></p><% } %>
+  <input type="text" name="login" placeholder="Логин" required />
+  <input type="text" name="secretWord" placeholder="Кодовое слово" required />
+  <input type="password" name="newPassword" placeholder="Новый пароль" required />
+  <button type="submit">Сбросить пароль</button>
+  <div style="margin-top: 10px;">
+    <a href="/login">← Назад ко входу</a>
+  </div>
+</form>

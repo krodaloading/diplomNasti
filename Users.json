@@ -1,0 +1,14 @@
+[
+  {
+    "id": "1750207141133",
+    "login": "Коля",
+    "passwordHash": "$2b$10$fqe5XmOAYIAPhFnMfN3MBe7dqi.ifpzzXXRFokg3prssoAgmD3TiO",
+    "role": "3",
+    "positionTitle": "Техник-программист",
+    "secretWord": "коля",
+    "likedProjects": [],
+    "resume": {},
+    "about": "",
+    "avatar": "/img/uploads/bf09cd6afd95a8205f1d4670be8a16ac"
+  }
+]

@@ -1,0 +1,16 @@
+<div class="page-container">
+  <h2>Профиль</h2>
+  <img src="<%= user.avatar || '/img/avatar.png' %>" alt="Аватар" class="avatar" style="width: 120px; border-radius: 12px;" />
+  <p><strong>Логин:</strong> <%= user.login %></p>
+
+  <% if (user.about) { %>
+    <p><strong>О себе:</strong><br><%= user.about %></p>
+  <% } else { %>
+    <p><em>Информация о себе не указана</em></p>
+  <% } %>
+  <br>
+  <a href="/profile/edit">✏ Редактировать профиль</a><br />
+
+  <form action="/logout" method="GET" style="margin-top: 20px;">
+  </form>
+</div>

@@ -1,0 +1,14 @@
+<div class="page-container">
+  <h2>Добавить проект</h2>
+  <form action="/add-project" method="POST">
+    <input type="text" name="title" placeholder="Название проекта" required />
+    <input type="text" name="description" placeholder="Описание проекта" required />
+    <button type="submit">Добавить</button>
+  </form>
+
+  <h2>Ваши проекты</h2>
+  <% mine.forEach(p => { %>
+    <div style="margin-bottom: 10px;"><strong><%= p.title %></strong> — <%= p.description %></div>
+  <% }) %>
+
+</div>

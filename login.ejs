@@ -1,0 +1,11 @@
+<form class="auth-form" action="/login" method="POST">
+  <h2>Вход</h2>
+  <% if (error) { %><p style="color:red;"><%= error %></p><% } %>
+  <input type="text" name="login" placeholder="Логин" required />
+  <input type="password" name="password" placeholder="Пароль" required />
+  <button type="submit">Войти</button>
+  <div style="margin-top: 10px;">
+    <a href="/register">Нет аккаунта? Зарегистрироваться</a> |
+    <a href="/recover">Забыли пароль?</a>
+  </div>
+</form>

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <title>Календарь с выбором проекта и мультивыделением</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      padding: 0;
+      margin: 0px;
+      user-select: none; /* чтобы текст не выделялся при drag */
+    }
+    /* Навигатор даты */
+    .date-navigator {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 700px;
+      margin: 0 auto 30px;
+    }
+    .left-group, .right-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .center-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-grow: 1;
+      justify-content: center;
+      min-width: 140px;
+    }
+    .date-display {
+      min-width: 100px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+    button {
+      cursor: pointer;
+      font-size: 16px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background-color: #7FFFD4;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #5ee3c3;
+    }
+    #datePicker {
+      position: absolute;
+      top: 38px;
+      right: 0;
+      opacity: 0;
+      pointer-events: none;
+      width: 160px;
+      height: 30px;
+      font-size: 16px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      z-index: 1000;
+      transition: opacity 0.2s ease;
+    }
+    #datePicker.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Контейнер таблицы и проектного окна */
+    .calendar-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      gap: 10px;
+      position: relative;
+    }
+
+    /* Плавающее окно проектов слева от таблицы */
+    #projectPanel {
+      width: 200px;
+      background: #e0f7f7;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 10px;
+      box-sizing: border-box;
+      font-size: 14px;
+      user-select: text;
+      max-height: 400px;
+      overflow-y: auto;
+      position: sticky;
+      top: 80px;
+      z-index: 100;
+    }
+    #projectPanel h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    #projectPanel .project-item {
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      background: #7fffd4;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    #projectPanel .project-item.selected,
+    #projectPanel .project-item:hover {
+      background-color: #5ee3c3;
+    }
+    #projectPanel .card-item {
+      padding: 4px 6px;
+      margin-left: 10px;
+      margin-bottom: 4px;
+      background: #aaf0d1;
+      border-radius: 4px;
+      cursor: default;
+      user-select: none;
+      font-size: 13px;
+    }
+
+    /* Таблица */
+    table.calendar-table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+      user-select: none;
+    }
+    table.calendar-table th,
+    table.calendar-table td {
+      border: 1px solid #aaa;
+      padding: 4px;
+      text-align: center;
+      font-size: 12px;
+      overflow: hidden;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+    table.calendar-table th {
+      background-color: #f0f0f0;
+      font-weight: 600;
+    }
+    table.calendar-table td:first-child {
+      font-weight: 600;
+      text-align: left;
+      padding-left: 6px;
+      background-color: #f9f9f9;
+      user-select: text;
+    }
+    /* Кнопки в ячейках таблицы */
+    table.calendar-table td button.cell-btn {
+      width: 100%;
+      height: 24px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      user-select: none;
+    }
+    table.calendar-table td button.cell-btn.selected {
+      background-color: lightgreen;
+    }
+    table.calendar-table td button.cell-btn.multi-selected {
+      background-color: #90ee90cc;
+    }
+  </style>
+</head>
+<body>
+  <!-- Навигатор даты -->
+  <div class="date-navigator">
+    <div class="left-group">
+      <button id="todayBtn" aria-label="Сегодня">Сегодня</button>
+    </div>
+    <div class="center-group">
+      <button id="prevBtn" aria-label="Предыдущий день">←</button>
+      <div id="dateDisplay" class="date-display"></div>
+      <button id="nextBtn" aria-label="Следующий день">→</button>
+    </div>
+    <div class="right-group">
+      <button id="calendarBtn" aria-label="Выбрать дату">📅</button>
+    </div>
+    <input type="date" id="datePicker" aria-label="Выбор даты" />
+  </div>
+
+  <div class="calendar-wrapper">
+    <!-- Плавающая панель выбора проектов и карт -->
+    <div id="projectPanel" aria-label="Панель выбора проекта и задач">
+      <h3>Проекты</h3>
+      <div id="projectListContainer"></div>
+    </div>
+
+    <!-- Таблица календаря -->
+    <table class="calendar-table" id="calendarTable" aria-label="Таблица задач по часам">
+      <thead>
+        <tr id="headerRow">
+          <th style="width:140px;">Задачи / Часы</th>
+          <!-- Часы добавятся динамически -->
+        </tr>
+      </thead>
+      <tbody id="calendarBody">
+        <!-- Строки с задачами -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    (function() {
+      // --- Навигатор даты ---
+      const dateDisplay = document.getElementById("dateDisplay");
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+      const todayBtn = document.getElementById("todayBtn");
+      const calendarBtn = document.getElementById("calendarBtn");
+      const datePicker = document.getElementById("datePicker");
+
+      let currentDate = new Date();
+
+      function formatDate(date) {
+        const day = date.getDate().toString().padStart(2, "0");
+        const month = (date.getMonth() + 1).toString().padStart(2, "0");
+        const year = date.getFullYear();
+        return `${day}.${month}.${year}`;
+      }
+
+      function isoDateString(date) {
+        return date.toISOString().slice(0,10); // "YYYY-MM-DD"
+      }
+
+      function updateDisplay() {
+        dateDisplay.textContent = formatDate(currentDate);
+        loadTasksForDate(isoDateString(currentDate));
+      }
+
+      prevBtn.addEventListener("click", () => {
+        currentDate.setDate(currentDate.getDate() - 1);
+        updateDisplay();
+      });
+
+      nextBtn.addEventListener("click", () => {
+        currentDate.setDate(currentDate.getDate() + 1);
+        updateDisplay();
+      });
+
+      todayBtn.addEventListener("click", () => {
+        currentDate = new Date();
+        updateDisplay();
+      });
+
+      calendarBtn.addEventListener("click", () => {
+        if (datePicker.classList.contains("show")) {
+          datePicker.classList.remove("show");
+        } else {
+          datePicker.valueAsDate = currentDate;
+          datePicker.classList.add("show");
+          datePicker.focus();
+        }
+      });
+
+      datePicker.addEventListener("change", () => {
+        if (datePicker.value) {
+          currentDate = new Date(datePicker.value);
+          updateDisplay();
+          datePicker.classList.remove("show");
+        }
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!datePicker.contains(e.target) && !calendarBtn.contains(e.target)) {
+          datePicker.classList.remove("show");
+        }
+      });
+
+      // --- Данные проектов и карт-заданий ---
+      const projects = [
+        {
+          id: 1,
+          title: "Проект А",
+          cards: [
+            { id: 11, title: "Задача A1" },
+            { id: 12, title: "Задача A2" },
+            { id: 13, title: "Задача A3" },
+          ]
+        },
+        {
+          id: 2,
+          title: "Проект Б",
+          cards: [
+            { id: 21, title: "Задача Б1" },
+            { id: 22, title: "Задача Б2" },
+          ]
+        },
+        {
+          id: 3,
+          title: "Проект В",
+          cards: [
+            { id: 31, title: "Задача В1" },
+          ]
+        },
+      ];
+
+      // --- Состояние ---
+      let selectedProjectId = projects[0].id;
+      // Выделения: { "YYYY-MM-DD": { projectId: { cardId: Set часов } } }
+      // Для простоты можно хранить: selections[date][cardId] = Set часов
+      const selections = {};
+
+      // --- Элементы ---
+      const projectListContainer = document.getElementById("projectListContainer");
+      const calendarBody = document.getElementById("calendarBody");
+      const headerRow = document.getElementById("headerRow");
+
+      // --- Рендер часов в заголовке ---
+      function renderHeaderHours() {
+        // Удаляем все кроме первого th (название задач)
+        while (headerRow.children.length > 1) {
+          headerRow.removeChild(headerRow.lastChild);
+        }
+        for (let h = 0; h < 24; h++) {
+          const th = document.createElement("th");
+          th.textContent = h;
+          headerRow.appendChild(th);
+        }
+      }
+
+      // --- Рендер списка проектов и карточек ---
+      function renderProjectList() {
+        projectListContainer.innerHTML = "";
+        projects.forEach(proj => {
+          const projDiv = document.createElement("div");
+          projDiv.className = "project-item";
+          projDiv.textContent = proj.title;
+          projDiv.dataset.projectId = proj.id;
+          if (proj.id === selectedProjectId) projDiv.classList.add("selected");
+          projDiv.tabIndex = 0;
+          projDiv.setAttribute("role", "button");
+          projDiv.setAttribute("aria-pressed", proj.id === selectedProjectId);
+
+          projDiv.addEventListener("click", () => {
+            if (selectedProjectId !== proj.id) {
+              selectedProjectId = proj.id;
+              renderProjectList();
+              renderProjectCards();
+              updateDisplay();
+            }
+          });
+          projDiv.addEventListener("keydown", e => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              projDiv.click();
+            }
+          });
+          projectListContainer.appendChild(projDiv);
+
+          // Карточки под проектом
+          const cardsContainer = document.createElement("div");
+          cardsContainer.style.marginLeft = "12px";
+          proj.cards.forEach(card => {
+            const cardDiv = document.createElement("div");
+            cardDiv.className = "card-item";
+            cardDiv.textContent = card.title;
+            cardsContainer.appendChild(cardDiv);
+          });
+          projectListContainer.appendChild(cardsContainer);
+        });
+      }
+
+      // --- Рендер строк таблицы с задачами выбранного проекта ---
+      function renderProjectCards() {
+        calendarBody.innerHTML = "";
+        const project = projects.find(p => p.id === selectedProjectId);
+        if (!project) return;
+
+        project.cards.forEach(card => {
+          const tr = document.createElement("tr");
+          tr.dataset.cardId = card.id;
+
+          // Первая ячейка с названием задачи
+          const tdName = document.createElement("td");
+          tdName.textContent = card.title;
+          tr.appendChild(tdName);
+
+          // Кнопки часов
+          for (let h = 0; h < 24; h++) {
+            const td = document.createElement("td");
+            const btn = document.createElement("button");
+            btn.className = "cell-btn";
+            btn.dataset.hour = h;
+            btn.title = `${card.title} — час ${h}`;
+            btn.tabIndex = -1;
+            td.appendChild(btn);
+            tr.appendChild(td);
+          }
+
+          calendarBody.appendChild(tr);
+        });
+      }
+
+      // --- Обновление выделения ячеек ---
+      function updateHighlighting() {
+        const dateStr = isoDateString(currentDate);
+        const selectedCards = selections[dateStr] || {};
+        // Для каждой строки
+        for (const tr of calendarBody.children) {
+          const cardId = tr.dataset.cardId;
+          for (let h = 0; h < 24; h++) {
+            const btn = tr.querySelector(`button.cell-btn[data-hour="${h}"]`);
+            if (!btn) continue;
+            btn.classList.remove("selected", "multi-selected");
+            if (selectedCards[cardId] && selectedCards[cardId].has(h)) {
+              btn.classList.add("selected");
+            }
+          }
+        }
+      }
+
+      // --- Обновление отображения (для совместимости) ---
+      function updateDisplay() {
+        updateHighlighting();
+        dateDisplay.textContent = formatDate(currentDate);
+      }
+
+      // --- Загрузка задач для даты (имитация) ---
+      function loadTasksForDate(dateStr) {
+        // Для примера можно просто обновить выделение
+        updateHighlighting();
+      }
+
+      // --- Обработка клика по ячейкам ---
+      calendarBody.addEventListener("click", e => {
+        if (!e.target.classList.contains("cell-btn")) return;
+        const btn = e.target;
+        const tr = btn.closest("tr");
+        const cardId = tr.dataset.cardId;
+        const hour = +btn.dataset.hour;
+        const dateStr = isoDateString(currentDate);
+
+        if (!selections[dateStr]) selections[dateStr] = {};
+        if (!selections[dateStr][cardId]) selections[dateStr][cardId] = new Set();
+
+        if (selections[dateStr][cardId].has(hour)) {
+          selections[dateStr][cardId].delete(hour);
+        } else {
+          selections[dateStr][cardId].add(hour);
+        }
+        updateHighlighting();
+      });
+
+      // --- Перетаскивание для мультивыделения ---
+      let isDragging = false;
+      let dragStart = null; // { cardId, hour }
+      let dragCurrent = null;
+
+      function clearMultiSelection() {
+        for (const tr of calendarBody.children) {
+          for (let h = 0; h < 24; h++) {
+            const btn = tr.querySelector(`button.cell-btn[data-hour="${h}"]`);
+            if (btn) btn.classList.remove("multi-selected");
+          }
+        }
+      }
+
+      function updateDragSelection() {
+        if (!isDragging || !dragStart || !dragCurrent) return;
+
+        const dateStr = isoDateString(currentDate);
+        if (!selections[dateStr]) selections[dateStr] = {};
+
+        // Определим прямоугольник выделения
+        const startCardId = dragStart.cardId;
+        const endCardId = dragCurrent.cardId;
+        const startHour = dragStart.hour;
+        const endHour = dragCurrent.hour;
+
+        // Определим индексы строк
+        const cardIds = Array.from(calendarBody.children).map(tr => tr.dataset.cardId);
+        const startIndex = cardIds.indexOf(startCardId);
+        const endIndex = cardIds.indexOf(endCardId);
+
+        const minRow = Math.min(startIndex, endIndex);
+        const maxRow = Math.max(startIndex, endIndex);
+
+        const minHour = Math.min(startHour, endHour);
+        const maxHour = Math.max(startHour, endHour);
+
+        clearMultiSelection();
+
+        for (let r = minRow; r <= maxRow; r++) {
+          const cardId = cardIds[r];
+          if (!selections[dateStr][cardId]) selections[dateStr][cardId] = new Set();
+          const tr = calendarBody.children[r];
+          for (let c = minHour; c <= maxHour; c++) {
+            const btn = tr.querySelector(`button.cell-btn[data-hour="${c}"]`);
+            if (btn) {
+              btn.classList.add("multi-selected");
+            }
+          }
+        }
+      }
+
+      calendarBody.addEventListener("mousedown", e => {
+        if (!e.target.classList.contains("cell-btn")) return;
+        isDragging = true;
+        const btn = e.target;
+        const tr = btn.closest("tr");
+        dragStart = {
+          cardId: tr.dataset.cardId,
+          hour: +btn.dataset.hour,
+        };
+        dragCurrent = { ...dragStart };
+        updateDragSelection();
+        e.preventDefault();
+      });
+
+      calendarBody.addEventListener("mousemove", e => {
+        if (!isDragging) return;
+        if (!e.target.classList.contains("cell-btn")) return;
+        const btn = e.target;
+        const tr = btn.closest("tr");
+        dragCurrent = {
+          cardId: tr.dataset.cardId,
+          hour: +btn.dataset.hour,
+        };
+        updateDragSelection();
+      });
+
+      document.addEventListener("mouseup", e => {
+        if (!isDragging) return;
+        isDragging = false;
+        const dateStr = isoDateString(currentDate);
+        if (!selections[dateStr]) selections[dateStr] = {};
+
+        const cardIds = Array.from(calendarBody.children).map(tr => tr.dataset.cardId);
+
+        const startCardId = dragStart.cardId;
+        const endCardId = dragCurrent.cardId;
+        const startHour = dragStart.hour;
+        const endHour = dragCurrent.hour;
+
+        const startIndex = cardIds.indexOf(startCardId);
+        const endIndex = cardIds.indexOf(endCardId);
+
+        const minRow = Math.min(startIndex, endIndex);
+        const maxRow = Math.max(startIndex, endIndex);
+
+        const minHour = Math.min(startHour, endHour);
+        const maxHour = Math.max(startHour, endHour);
+
+        for (let r = minRow; r <= maxRow; r++) {
+          const cardId = cardIds[r];
+          if (!selections[dateStr][cardId]) selections[dateStr][cardId] = new Set();
+          for (let c = minHour; c <= maxHour; c++) {
+            if (calendarBody.children[r].querySelector(`button.cell-btn[data-hour="${c}"]`)) {
+              selections[dateStr][cardId].add(c);
+            }
+          }
+        }
+
+        clearMultiSelection();
+        updateHighlighting();
+      });
+
+      // --- Инициализация ---
+      renderHeaderHours();
+      renderProjectList();
+      renderProjectCards();
+      updateDisplay();
+
+    })();
+  </script>
+<a href="/board-cards">← Назад</a>
+</body>
+</html>
